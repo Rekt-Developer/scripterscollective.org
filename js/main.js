@@ -1,27 +1,50 @@
-// Three.js background animation
+// Three.js Background Animation
 const createBackground = () => {
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
     const renderer = new THREE.WebGLRenderer({ alpha: true });
+    
     renderer.setSize(window.innerWidth, window.innerHeight);
     document.getElementById('hero-background').appendChild(renderer.domElement);
 
-    const geometry = new THREE.IcosahedronGeometry(1, 1);
-    const material = new THREE.MeshBasicMaterial({ color: 0x6d28d9, wireframe: true });
-    const icosahedron = new THREE.Mesh(geometry, material);
-    scene.add(icosahedron);
+    // Create particles
+    const geometry = new THREE.BufferGeometry();
+    const vertices = [];
+    const particleCount = 1000;
 
-    camera.position.z = 5;
+    for (let i = 0; i < particleCount; i++) {
+        vertices.push(
+            Math.random() * 2000 - 1000,
+            Math.random() * 2000 - 1000,
+            Math.random() * 2000 - 1000
+        );
+    }
 
+    geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+    
+    const material = new THREE.PointsMaterial({
+        color: 0x8b5cf6,
+        size: 2,
+        transparent: true,
+        opacity: 0.8
+    });
+
+    const particles = new THREE.Points(geometry, material);
+    scene.add(particles);
+
+    camera.position.z = 1000;
+
+    // Animation
     const animate = () => {
         requestAnimationFrame(animate);
-        icosahedron.rotation.x += 0.005;
-        icosahedron.rotation.y += 0.005;
+        particles.rotation.x += 0.0005;
+        particles.rotation.y += 0.0005;
         renderer.render(scene, camera);
     };
 
     animate();
 
+    // Resize handler
     window.addEventListener('resize', () => {
         camera.aspect = window.innerWidth / window.innerHeight;
         camera.updateProjectionMatrix();
@@ -29,7 +52,7 @@ const createBackground = () => {
     });
 };
 
-// Smooth scrolling for navigation links
+// Smooth Scroll
 document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     anchor.addEventListener('click', function (e) {
         e.preventDefault();
@@ -39,7 +62,7 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     });
 });
 
-// Intersection Observer for fade-in animations
+// Intersection Observer for Animations
 const observerOptions = {
     root: null,
     rootMargin: '0px',
@@ -55,73 +78,80 @@ const observer = new IntersectionObserver((entries, observer) => {
     });
 }, observerOptions);
 
-document.querySelectorAll('.project-card, .community-card').forEach(el => {
-    observer.observe(el);
+// Observe elements
+const animateElements = document.querySelectorAll('.project-card, .community-card, .partner-card');
+animateElements.forEach(el => observer.observe(el));
+
+// Parallax Effect
+const parallax = () => {
+    const scrolled = window.pageYOffset;
+    const parallaxElements = document.querySelectorAll('.parallax');
+    
+    parallaxElements.forEach(el => {
+        const speed = el.dataset.speed || 0.5;
+        el.style.transform = `translateY(${scrolled * speed}px)`;
+    });
+};
+
+window.addEventListener('scroll', parallax);
+
+// Navbar Animation
+const header = document.querySelector('header');
+let lastScroll = 0;
+
+window.addEventListener('scroll', () => {
+    const currentScroll = window.pageYOffset;
+    
+    if (currentScroll <= 0) {
+        header.classList.remove('scroll-up');
+        return;
+    }
+    
+    if (currentScroll > lastScroll && !header.classList.contains('scroll-down')) {
+        header.classList.remove('scroll-up');
+        header.classList.add('scroll-down');
+    } else if (currentScroll < lastScroll && header.classList.contains('scroll-down')) {
+        header.classList.remove('scroll-down');
+        header.classList.add('scroll-up');
+    }
+    
+    lastScroll = currentScroll;
 });
 
-// Initialize background animation
+// Initialize background animation if hero section exists
 if (document.getElementById('hero-background')) {
     createBackground();
 }
 
-// 404 page animation
-if (document.body.classList.contains('error-page')) {
-    const errorBackground = document.getElementById('error-background');
-    const ctx = errorBackground.getContext('2d');
-    errorBackground.width = window.innerWidth;
-    errorBackground.height = window.innerHeight;
-
-    class Particle {
-        constructor() {
-            this.x = Math.random() * errorBackground.width;
-            this.y = Math.random() * errorBackground.height;
-            this.size = Math.random() * 5 + 1;
-            this.speedX = Math.random() * 3 - 1.5;
-            this.speedY = Math.random() * 3 - 1.5;
-        }
-        update() {
-            this.x += this.speedX;
-            this.y += this.speedY;
-            if (this.size > 0.2) this.size -= 0.1;
-        }
-        draw() {
-            ctx.fillStyle = '#8b5cf6';
-            ctx.beginPath();
-            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-            ctx.fill();
-        }
-    }
-
-    let particlesArray = [];
-    const numberOfParticles = 100;
-
-    const createParticles = () => {
-        for (let i = 0; i < numberOfParticles; i++) {
-            particlesArray.push(new Particle());
-        }
-    };
-
-    const animateParticles = () => {
-        ctx.clearRect(0, 0, errorBackground.width, errorBackground.height);
-        for (let i = 0; i < particlesArray.length; i++) {
-            particlesArray[i].update();
-            particlesArray[i].draw();
-            if (particlesArray[i].size <= 0.2) {
-                particlesArray.splice(i, 1);
-                i--;
-            }
-        }
-        if (particlesArray.length < numberOfParticles) {
-            createParticles();
-        }
-        requestAnimationFrame(animateParticles);
-    };
-
-    createParticles();
-    animateParticles();
-
-    window.addEventListener('resize', () => {
-        errorBackground.width = window.innerWidth;
-        errorBackground.height = window.innerHeight;
+// Add loading animation to project cards
+document.querySelectorAll('.project-card').forEach(card => {
+    card.addEventListener('mouseenter', () => {
+        card.style.animation = 'float 3s ease-in-out infinite';
     });
-}
+    
+    card.addEventListener('mouseleave', () => {
+        card.style.animation = 'none';
+    });
+});
+
+// Initialize custom cursor
+const cursor = document.createElement('div');
+cursor.className = 'custom-cursor';
+document.body.appendChild(cursor);
+
+document.addEventListener('mousemove', (e) => {
+    cursor.style.left = e.clientX + 'px';
+    cursor.style.top = e.clientY + 'px';
+});
+
+// Add hover effect to all interactive elements
+const interactiveElements = document.querySelectorAll('a, button');
+interactiveElements.forEach(el => {
+    el.addEventListener('mouseenter', () => {
+        cursor.classList.add('cursor-hover');
+    });
+    
+    el.addEventListener('mouseleave', () => {
+        cursor.classList.remove('cursor-hover');
+    });
+});
